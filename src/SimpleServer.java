@@ -5,6 +5,22 @@ import java.util.Enumeration;
 import javax.net.*;
 import javax.net.ssl.*;
 
+/** SERVER side of a simple client/server SSL connection.
+ *
+ * Each side just reads lines from the console and passes them to the other side of the connection (and then prints).
+ *
+ * This runs on a Mac OS X (Catalina 10.15.7), and the key concept is that the JDK includes a Provider which uses
+ * the Mac Keychain(s) to provide the necessary certificates, as follows:
+ *
+ *          KeyStore.getInstance("KeychainStore");
+ *
+ * Start the SimpleServer first (which puts up an accept()), then the SimpleClient.
+ *
+ * Entering QUIT on either side terminates both client and server.
+ *
+ * Note the flags in SimpleConsts - these can be set to True to display detailed information about the
+ * flow of both Server and Client.
+ */
 public class SimpleServer implements Runnable {
 
   private static SimpleConsts cons = new SimpleConsts();
@@ -14,20 +30,19 @@ public class SimpleServer implements Runnable {
     sktSvr = ss;
   }
   public static void main(String args[]) {
-    String type = "TLS1.3";
     try {
-      ln("SERVER starting -- Java: " + System.getProperty("java.version"));
-      ln("Getting ServerSocketFactory");
-      ServerSocketFactory ssf = SimpleServer.getServerSocketFactory(type);
-      ln("Creating ServerSocket");
+      trace("SERVER starting -- Java: " + System.getProperty("java.version"));
+      trace("Getting ServerSocketFactory");
+      ServerSocketFactory ssf = SimpleServer.getServerSocketFactory();
+      trace("Creating ServerSocket");
       ServerSocket ss = ssf.createServerSocket();
       ((SSLServerSocket) ss).setNeedClientAuth(true);
 
       ss.bind(new InetSocketAddress(cons.host, cons.port));
-      ln("Created SSLServerSocket -- Local Socket Address: " + ss.getLocalSocketAddress() + " InetAddress: " + ss.getInetAddress());
+      trace("Created SSLServerSocket -- Local Socket Address: " + ss.getLocalSocketAddress() + " InetAddress: " + ss.getInetAddress());
       new Thread( new SimpleServer(ss)).start();
     } catch (IOException e) {
-      System.out.println("Unable to start ClassServer: " + e.getMessage());
+      cons.ln("Unable to start ClassServer: " + e.getMessage());
       e.printStackTrace();
     }
   }
@@ -35,51 +50,43 @@ public class SimpleServer implements Runnable {
   public void run() {
     try {
       Socket socket = sktSvr.accept();
-      ln("SERVER -- socket was accepted");
+      trace("SERVER -- socket was accepted");
 
       Thread thrdWrite = new Thread( new SimpleRW("SERVER", false, socket));
       thrdWrite.start();
       Thread thrdRead = new Thread( new SimpleRW("SERVER", true, socket));
       thrdRead.start();
-
-      while(thrdWrite.isAlive() || thrdWrite.isAlive())
-        Thread.sleep(200);
-      System.exit(0);
-
-    } catch(Exception e) { ln("SERVER Exception on Accept -- " + e.toString());}
+    } catch(Exception e) { cons.ln("SERVER Exception on Accept -- " + e.toString());}
   }
 
-  private static ServerSocketFactory getServerSocketFactory(String type) {
-    if (type.equals("TLS1.3")) {
-      SSLServerSocketFactory ssf = null;
-      try {
-        // set up key manager to do server authentication
-        SSLContext ctx;
-        KeyManagerFactory kmf;
-        KeyStore ks;
+  private static ServerSocketFactory getServerSocketFactory() {
+    SSLServerSocketFactory ssf = null;
+    try {
+      // set up key manager to do server authentication
+      SSLContext ctx;
+      KeyManagerFactory kmf;
+      KeyStore ks;
 
-        ctx = SSLContext.getInstance("TLS");
-        kmf = KeyManagerFactory.getInstance("SunX509");
-        ks = KeyStore.getInstance("KeychainStore");
-        ks.load(null, null);
-        if(cons.bServer) show("SERVER KeyStore", "Using Mac Keychain", "No password", ks, null, null);
-        kmf.init(ks, null);
-        ctx.init(kmf.getKeyManagers(), null, null);
+      ctx = SSLContext.getInstance("TLS");
+      kmf = KeyManagerFactory.getInstance("SunX509");
+      ks  = KeyStore.getInstance("KeychainStore");
+      ks.load(null, null);
+      if(cons.bServer) show("SERVER KeyStore", "Using Mac Keychain", "No password", ks, kmf, ctx);
+      kmf.init(ks, null);
+      ctx.init(kmf.getKeyManagers(), null, null);
 
-        ssf = ctx.getServerSocketFactory();
-        return ssf;
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    } else {
-      return ServerSocketFactory.getDefault();
+      ssf = ctx.getServerSocketFactory();
+      return ssf;
+    } catch (Exception e) {
+      e.printStackTrace();
     }
+
     return null;
   }
 
   // Display all the status for any that are non-null. Label must be non-null to display anything
   public static void show(String label, String path, String pwd, KeyStore ks, KeyManagerFactory kmf, SSLContext ctx) throws Exception {
-    if (label != null) {
+    if (cons.bShow && label != null) {
       blk();
       ln("==============" + label + "=============");
       ln("PATH: " + path + "  PWD: " + pwd);
@@ -111,6 +118,7 @@ public class SimpleServer implements Runnable {
     }
   }
 
-  public static void ln(String s) { cons.ln(s); }
-  public static void blk() { cons.blk(); }
+  public static void trace(String s) { cons.trace(s); }
+  public static void ln(String s)    { cons.ln(s); }
+  public static void blk()           { cons.blk(); }
 }

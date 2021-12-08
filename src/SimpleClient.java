@@ -1,5 +1,6 @@
 
 import java.net.*;
+import java.security.KeyStore;
 import javax.net.ssl.*;
 
 public class SimpleClient {
@@ -8,25 +9,46 @@ public class SimpleClient {
 
   public static void main(String[] args) throws Exception {
     try {
-      SSLSocket socket = SimpleSocket.getSocket(cons.host, cons.port, "Uses Mac Keychain", "No Password");
+      SSLSocket socket = getSocket(cons.host, cons.port, "Uses Mac Keychain", "No Password");
       SSLSession session = socket.getSession();
-      blk();
-      ln("CLIENT got a socket connection");
-      ln("           Protocol: " + session.getProtocol());
-      ln("       Cipher Suite: " + session.getCipherSuite());
-      blk();
+      trc();
+      trace("CLIENT got a socket connection");
+      trace("           Protocol: " + session.getProtocol());
+      trace("       Cipher Suite: " + session.getCipherSuite());
+      trc();
 
       Thread thrdWrite = new Thread( new SimpleRW("CLIENT", false, socket));
       thrdWrite.start();
       Thread thrdRead = new Thread( new SimpleRW("CLIENT", true, socket));
       thrdRead.start();
 
-      while(thrdWrite.isAlive() || thrdWrite.isAlive())
-        Thread.sleep(200);
-      System.exit(0);
-    } catch(Exception e) { ln("CLIENT Exception -- " + e.toString()); }
+    } catch(Exception e) { cons.ln("CLIENT Exception -- " + e.toString()); }
+  }
+  public static SSLSocket getSocket(String ip, int port, String pathToCerts, String pwdIn) throws Exception{
+    SSLContext ctx;
+    KeyManagerFactory kmf;
+    KeyStore ks;
+    SSLSocket socket;
+    char[] pwd = pwdIn==null ? null : pwdIn.toCharArray();
+
+    ctx = SSLContext.getInstance("TLS");
+    kmf = KeyManagerFactory.getInstance("SunX509");
+    ks = KeyStore.getInstance("KeychainStore");
+    ks.load(null, null);
+
+    kmf.init(ks, pwd);
+    ctx.init(kmf.getKeyManagers(), null, null);
+
+    if(cons.bClient)
+      SimpleServer.show("SimpleSocket", pathToCerts, pwdIn, ks, kmf, ctx);
+
+    socket = (SSLSocket) ctx.getSocketFactory().createSocket(ip, port);
+    trace("About to start handshake");
+    socket.startHandshake();
+    trace("Returned from handshake");
+    return socket;
   }
 
-  public static void ln(String s) { cons.ln(s); }
-  public static void blk() { cons.blk(); }
+  public static void trace(String s) { cons.trace(s); }
+  public static void trc() { cons.trc(); }
 }

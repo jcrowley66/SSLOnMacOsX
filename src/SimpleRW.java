@@ -11,8 +11,6 @@ import java.nio.*;
  */
 public class SimpleRW implements Runnable {
 
-  private static boolean bDebug = true;
-
   private SimpleConsts cons = new SimpleConsts();
 
   private String label;
@@ -46,14 +44,13 @@ public class SimpleRW implements Runnable {
         doWrite();
       }
     } catch(Exception e){
-      cons.ln(label + (read ? " READ -- " : " WRITE -- ") + "Exception processing In/Out Stream -- " + e.toString());
+      cons.trace(label + (read ? " READ -- " : " WRITE -- ") + "Exception processing In/Out Stream -- " + e.toString());
     }
-    ln(label + " R/W 'run' terminating");
+    trace(label + " R/W 'run' terminating");
   }
   // READs a message from the socket & prints to the console
   public void doRead() throws Exception {
-    boolean keepGoing = true;
-    while(keepGoing){
+    while(true){
       int amt = 0;
       debug("Reading the length");
       while(amt < 4) {
@@ -66,18 +63,17 @@ public class SimpleRW implements Runnable {
         amt += inStrm.read(bfr, amt, lnth - amt);
       }
       String str = new String(bfr, 0, lnth);
-      debug(" READ: " + str);
+      ln(" READ: " + str);
       if(str.equals("QUIT")) {
-        ln(label + " doRead terminating");
-        keepGoing = false;
+        trace(label + " doRead terminating");
+        System.exit(0);
       }
     }
   }
   // Reads a message from the console, writes length then message to the socket
   public void doWrite() throws Exception {
-    boolean keepGoing = true;
-    while(keepGoing){
-      System.out.println(label + " ---> ");
+    while(true){
+      System.out.print(label + " ---> ");
       String str = rdConsole.readLine();
       bbInt.putInt(0, str.length());
       debug("Writing length: " + bbInt.getInt(0) + " String: " + str);
@@ -87,14 +83,16 @@ public class SimpleRW implements Runnable {
       bbBfr.put(strBytes);
       debug("Writing string: " + str);
       outStrm.write(bfr, 0, strBytes.length);
-      cons.ln(label + " WRITE: " + str);
+      cons.trace(label + " WRITE: " + str);
       if(str.equals("QUIT")) {
-        ln(label + " doWrite terminating");
-        keepGoing = false;
+        trace(label + " doWrite terminating");
+        Thread.sleep(100);        // To let the outStrm.write complete
+        System.exit(0);
       }
     }
   }
 
+  private void trace(String s) { cons.trace(s); }
   private void ln(String s)    {cons.ln(label + " -- " + s); }
-  private void debug(String s) { if(bDebug) cons.ln("DEBUG: " + label + " -- " + s); }
+  private void debug(String s) { if(cons.bDebug) cons.ln("DEBUG: " + label + " -- " + s); }
 }
