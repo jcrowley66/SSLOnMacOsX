@@ -32,7 +32,7 @@ public class SimpleClient {
     SSLSocket socket;
     char[] pwd = pwdIn==null ? null : pwdIn.toCharArray();
 
-    ctx = SSLContext.getInstance("TLS");
+    ctx = SSLContext.getInstance("TLSv1.3");
     kmf = KeyManagerFactory.getInstance("SunX509");
     ks = KeyStore.getInstance("KeychainStore");
     ks.load(null, null);
