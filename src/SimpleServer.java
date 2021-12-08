@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.security.KeyStore;
+import java.util.Arrays;
 import java.util.Enumeration;
 import javax.net.*;
 import javax.net.ssl.*;
@@ -9,17 +10,23 @@ import javax.net.ssl.*;
  *
  * Each side just reads lines from the console and passes them to the other side of the connection (and then prints).
  *
- * This runs on a Mac OS X (Catalina 10.15.7), and the key concept is that the JDK includes a Provider which uses
- * the Mac Keychain(s) to provide the necessary certificates, as follows:
+ * This runs on a Mac OS X (Catalina 10.15.7) using Java 1.8.0_311, and the key concept is that the JDK includes a Provider
+ * which uses the Mac Keychain(s) to provide the necessary certificates, as follows:
  *
  *          KeyStore.getInstance("KeychainStore");
  *
  * Start the SimpleServer first (which puts up an accept()), then the SimpleClient.
  *
- * Entering QUIT on either side terminates both client and server.
+ * Each process will put up a prompt, just enter any desired message and hit Enter. Enter QUIT to terminate both Client
+ * and Server.
  *
- * Note the flags in SimpleConsts - these can be set to True to display detailed information about the
+ * You may be prompted to allow access to the Keychains so enter your password and select "Always Allow" button so you
+ * are not asked every time.
+ *
+ * Note the flags in SimpleConsts - these can be set to True to display summary and detailed information about the
  * flow of both Server and Client.
+ *
+ * The JavaSSL JAR may be used to run each side
  */
 public class SimpleServer implements Runnable {
 
@@ -32,6 +39,7 @@ public class SimpleServer implements Runnable {
   public static void main(String args[]) {
     try {
       trace("SERVER starting -- Java: " + System.getProperty("java.version"));
+
       trace("Getting ServerSocketFactory");
       ServerSocketFactory ssf = SimpleServer.getServerSocketFactory();
       trace("Creating ServerSocket");
@@ -71,9 +79,9 @@ public class SimpleServer implements Runnable {
       kmf = KeyManagerFactory.getInstance("SunX509");
       ks  = KeyStore.getInstance("KeychainStore");
       ks.load(null, null);
-      if(cons.bServer) show("SERVER KeyStore", "Using Mac Keychain", "No password", ks, kmf, ctx);
       kmf.init(ks, null);
       ctx.init(kmf.getKeyManagers(), null, null);
+      if(cons.bServer) show("SERVER KeyStore", "Using Mac Keychain", "No password", ks, kmf, ctx);
 
       ssf = ctx.getServerSocketFactory();
       return ssf;
@@ -114,7 +122,48 @@ public class SimpleServer implements Runnable {
         blk();
         ln("Key Manager Factory -- " + kmf.toString());
         ln("--------------------------------------");
+        ln("  Provider -- " + kmf.getProvider());
+        ln("# Key Mgrs -- " + kmf.getKeyManagers().length);
+        if(cons.bDetails){
+          KeyManager[] mgrs = kmf.getKeyManagers();
+          String[] strMgrs  = new String[mgrs.length];
+          for( int i=0; i<mgrs.length; i++){
+            KeyManager mgr = mgrs[i];
+            strMgrs[i] = "Type: " + mgr.getClass().getSimpleName() + " -- " + mgr.getClass().getName();
+          }
+          listArray("   KeyManager", strMgrs);
+        }
       }
+
+      if(ctx != null){
+        blk();
+        ln("SSLContext -- " + ctx.toString());
+        ln("----------------------------------");
+        ln("   Provider -- " + ctx.getProvider());
+        ln("   Protocol -- " + ctx.getProtocol());
+        if(cons.bDetails){
+          SSLParameters params = ctx.getSupportedSSLParameters();
+                       ln("   Need Client Auth -- " + params.getNeedClientAuth());
+                       ln("   Want Client Auth -- " + params.getWantClientAuth());
+          String[] sArray= params.getProtocols();
+          listArray("          Protocol", sArray);
+          sArray = params.getApplicationProtocols();
+          listArray("     App Protocols", sArray);
+          sArray = params.getCipherSuites();
+          listArray("           Ciphers", sArray);
+        }
+      }
+    }
+  }
+
+  private static String allBlanks = "                                                       ";
+
+  private static void listArray(String labelParam, String[] array) {
+    String label  = labelParam;
+    String blanks = allBlanks.substring(0, label.length());
+    for(int i=0; i<array.length; i++){
+      ln(label + " -- [" + i + "] " + array[i]);
+      label = blanks;
     }
   }
 

@@ -9,6 +9,7 @@ public class SimpleClient {
 
   public static void main(String[] args) throws Exception {
     try {
+      trace("CLIENT starting -- Java: " + System.getProperty("java.version"));
       SSLSocket socket = getSocket(cons.host, cons.port, "Uses Mac Keychain", "No Password");
       SSLSession session = socket.getSession();
       trc();
@@ -43,6 +44,7 @@ public class SimpleClient {
       SimpleServer.show("SimpleSocket", pathToCerts, pwdIn, ks, kmf, ctx);
 
     socket = (SSLSocket) ctx.getSocketFactory().createSocket(ip, port);
+    socket.setEnabledProtocols(new String[]{"TLSv1.3", "TLSv1.2"});
     trace("About to start handshake");
     socket.startHandshake();
     trace("Returned from handshake");
