@@ -9,7 +9,7 @@ public class SimpleClient {
 
   public static void main(String[] args) throws Exception {
     try {
-      trace("CLIENT starting -- Java: " + System.getProperty("java.version"));
+      cons.showStart("CLIENT");
       SSLSocket socket = getSocket(cons.host, cons.port, "Uses Mac Keychain", "No Password");
       SSLSession session = socket.getSession();
       trc();
@@ -40,8 +40,7 @@ public class SimpleClient {
     kmf.init(ks, pwd);
     ctx.init(kmf.getKeyManagers(), null, null);
 
-    if(cons.bClient)
-      SimpleServer.show("SimpleSocket", pathToCerts, pwdIn, ks, kmf, ctx);
+    if(cons.bClient) cons.show("SimpleSocket", pathToCerts, pwdIn, ks, kmf, ctx);
 
     socket = (SSLSocket) ctx.getSocketFactory().createSocket(ip, port);
     socket.setEnabledProtocols(new String[]{"TLSv1.3", "TLSv1.2"});

@@ -10,13 +10,14 @@ Finally cracked the problem, and this POC starts an SSLServerSocket and puts up 
 
 Simple messages are entered on the console of either Server or Client, passed to the other end of the connection, and printed by the receiver.
 
-The key breakthrough was finding that the JDK includes a Provider which will use the Mac Keychains:
+The key breakthrough was finding that the JDK includes a Provider which will use the Mac Keychains. **Must** include the following:
 
-<h4 align="center">KeyStore.getInstance("KeychainStore")</h4>
+- JVM option:&nbsp;&nbsp;-Djavax.net.ssl.trustStoreType=KeychainStore
+- In the code:&nbsp;&nbsp;&nbsp;KeyStore.getInstance("KeychainStore")
 
 See: https://docs.oracle.com/javase/10/security/oracle-providers.htm#JSSEC-GUID-3185649A-C316-45F2-A70E-2B3FF6BDC34F
 
-**Note:** If prompted for your password in order to access the Keychain, select the *Always Allow* button. If running from a terminal (as opposed to an IDE) this is more complicated - TBD.
+**Note:** If prompted for your password in order to access the Keychain, select the *Always Allow* button.
 
 
 See the comments at the top of SimpleServer for more details.
