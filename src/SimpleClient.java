@@ -1,16 +1,16 @@
 
-import java.net.*;
 import java.security.KeyStore;
 import javax.net.ssl.*;
 
 public class SimpleClient {
 
-  private static SimpleConsts cons = new SimpleConsts();
+  private static SimpleCommon common = new SimpleCommon();
 
   public static void main(String[] args) throws Exception {
+    common.setupTrustStore(false);
+    common.showStart("CLIENT");
     try {
-      cons.showStart("CLIENT");
-      SSLSocket socket = getSocket(cons.host, cons.port, "Uses Mac Keychain", "No Password");
+      SSLSocket socket   = getSocket(common.host, common.port);
       SSLSession session = socket.getSession();
       trc();
       trace("CLIENT got a socket connection");
@@ -23,24 +23,23 @@ public class SimpleClient {
       Thread thrdRead = new Thread( new SimpleRW("CLIENT", true, socket));
       thrdRead.start();
 
-    } catch(Exception e) { cons.ln("CLIENT Exception -- " + e.toString()); }
+    } catch(Exception e) { common.err("CLIENT Exception -- " + e.toString()); }
   }
-  public static SSLSocket getSocket(String ip, int port, String pathToCerts, String pwdIn) throws Exception{
+  public static SSLSocket getSocket(String ip, int port) throws Exception{
     SSLContext ctx;
     KeyManagerFactory kmf;
     KeyStore ks;
     SSLSocket socket;
-    char[] pwd = pwdIn==null ? null : pwdIn.toCharArray();
 
     ctx = SSLContext.getInstance("TLSv1.3");
     kmf = KeyManagerFactory.getInstance("SunX509");
-    ks = KeyStore.getInstance("KeychainStore");
-    ks.load(null, null);
+    ks  = KeyStore.getInstance(common.keystoreName);
+    ks.load(common.keystoreInStrm, common.keystorePwd);
 
-    kmf.init(ks, pwd);
+    kmf.init(ks, null);
     ctx.init(kmf.getKeyManagers(), null, null);
 
-    if(cons.bClient) cons.show("SimpleSocket", pathToCerts, pwdIn, ks, kmf, ctx);
+    if(common.bClient) common.show("SimpleSocket", ks, kmf, ctx);
 
     socket = (SSLSocket) ctx.getSocketFactory().createSocket(ip, port);
     socket.setEnabledProtocols(new String[]{"TLSv1.3", "TLSv1.2"});
@@ -50,6 +49,6 @@ public class SimpleClient {
     return socket;
   }
 
-  public static void trace(String s) { cons.trace(s); }
-  public static void trc() { cons.trc(); }
+  public static void trace(String s) { common.trace(s); }
+  public static void trc() { common.blktrc(); }
 }

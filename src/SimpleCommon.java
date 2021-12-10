@@ -1,9 +1,11 @@
 import javax.net.ssl.*;
+import java.io.*;
 import java.security.KeyStore;
 import java.util.Enumeration;
+import org.apache.commons.lang3.SystemUtils;
 
-public class SimpleConsts {
-  public static boolean traceOn   = false;       // TRUE to trace setup path, FALSE to just show prompts & data received
+public class SimpleCommon {
+  public static boolean traceOn   = true;       // TRUE for the trace(String s) method to display output, FALSE to suppress
 
   public static boolean bDebug    = false;      // TRUE for the debug(String s) method to display output
 
@@ -19,11 +21,39 @@ public class SimpleConsts {
 
   /** Trace of processing controlled by the 'traceOn' switch above */
   public static void trace(String s)  { if(traceOn) ln(s); }
-  public static void trc()            { trace(""); }
+  public static void blktrc()         { trace(""); }
 
   public static void ln(String s)     { System.out.println(s); }
   public static void blk()            { ln(""); }
 
+  public static void err(String s)    { ln("ERROR: " + s); }        // Errors never suppressed
+
+  public static String javaHome    = System.getProperty("java.home");
+  public static String cacertsPath = javaHome + File.separator + "lib" + File.separator + "security" + File.separator + "cacerts";
+
+  // Following must all be initialized by setupTrustStore method!
+  public static String      keystoreName    = null;
+  public static char[]      keystorePwd     = null;
+  public static InputStream keystoreInStrm  = null;
+
+  public static void setupTrustStore(boolean forServer) {
+    if(SystemUtils.IS_OS_MAC){
+      // NOTE: Tried the 'cacerts' on both sides and did NOT work
+      //       Tried 'cacerts' on Server side, KeychainStore on Client side - did NOT work
+      //       KeychainStore on both sides DOES WORK (on my Mac at least)
+//    System.setProperty("javax.net.ssl.trustStore", cacertsPath);
+      System.setProperty("javax.net.ssl.trustStoreType", "KeychainStore");
+      keystoreName = "KeychainStore";
+    } else if(SystemUtils.IS_OS_WINDOWS) {
+      // https://github.com/gradle/gradle/issues/6584
+      // javax.net.ssl.trustStore=C:\\Windows\\win.ini
+      // javax.net.ssl.trustStoreType=Windows-ROOT
+      System.setProperty("javax.net.ssl.trustStore", "C:\\Windows\\win.ini" );
+      System.setProperty("javax.net.ssl.trustStoreType", "Windows-ROOT");
+      keystoreName = "Windows-ROOT";
+    } else
+      err("NOT YET IMPLEMENTED for " + SystemUtils.OS_NAME);
+  }
   // Show environment at startup - Java version, etc
   public static void showStart(String label){
     if(label!=null){
@@ -34,6 +64,9 @@ public class SimpleConsts {
       trace("     Java Version: " + System.getProperty("java.version"));
       trace("Java Spec Version: " + System.getProperty("java.specification.version"));
       trace("   Java Class Vsn: " + System.getProperty("java.class.version"));
+      trace("        Java Home: " + javaHome);
+      trace("       TrustStore: " + System.getProperty("javax.net.ssl.trustStore"));
+      trace("   TrustStoreType: " + System.getProperty("javax.net.ssl.trustStoreType"));
       if(bStartDtl) {
         listArray("  Java Class Path: ", System.getProperty("java.class.path").split(":"));
         listArray("         Lib Path: ", System.getProperty("java.library.path").split(":"));
@@ -42,11 +75,10 @@ public class SimpleConsts {
     }
   }
   // Display all the status for any that are non-null. Label must be non-null to display anything
-  public static void show(String label, String path, String pwd, KeyStore ks, KeyManagerFactory kmf, SSLContext ctx) throws Exception {
+  public static void show(String label, KeyStore ks, KeyManagerFactory kmf, SSLContext ctx) throws Exception {
     if (bShow && label != null) {
       blk();
       ln("==============" + label + "=============");
-      ln("PATH: " + path + "  PWD: " + pwd);
 
       if (ks != null) {
         blk();
@@ -61,7 +93,6 @@ public class SimpleConsts {
             String elem = e.nextElement();
             ln("  Alias: " + elem);
             ln("         " + ks.getCreationDate(elem).toString());
-
           }
         }
         blk();
@@ -115,24 +146,5 @@ public class SimpleConsts {
       label = blanks;
     }
   }
-
-//  def sysClassMajorMinor(of:Any):(Int, Int) = {
-//    // NOTE: Frustrating since this must already be in memory for the class, but could not find any way to
-//    //       access the version info without doing I/O to read it!!!!
-//    val clazz = of.getClass
-//    val name  = clazz.getName.replace(".", "/") + ".class"
-//    var rslt  = if(mapMajorMinor.contains(name)) mapMajorMinor.get(name) else 0
-//    if(rslt == 0){
-//      // Format of class file us U4(magic number)U2(major version)U2(minor version) - ASSUME version numbers always < 1000
-//      val bytes = new Array[Byte](4)
-//      val strm = new BufferedInputStream(clazz.getClassLoader.getResourceAsStream(name))
-//      strm.read(bytes)        // Skip initial magic number
-//      strm.read(bytes)        // read U2 for minor, U2 for major version - pick up each from a single byte
-//      strm.close
-//          rslt = bytes(3) * 1000 + bytes(1)
-//      mapMajorMinor.put(name, rslt)
-//    }
-//    (rslt/1000, rslt%1000)
-//  }
 
 }

@@ -22,24 +22,25 @@ import javax.net.ssl.*;
  * You may be prompted to allow access to the Keychains so enter your password and select "Always Allow" button so you
  * are not asked every time.
  *
- * Note the flags in SimpleConsts - these can be set to True to display summary and detailed information about the
+ * Note the flags in SimpleCommon - these can be set to True to display summary and detailed information about the
  * flow of both Server and Client.
  *
  * The JavaSSL JAR may be used to run each side:
- *   java -cp JavaSSL.jar -Djavax.net.ssl.trustStoreType=KeychainStore SimpleServer
- *   java -cp JavaSSL.jar -Djavax.net.ssl.trustStoreType=KeychainStore SimpleClient
+ *   java -cp JavaSSL.jar SimpleServer
+ *   java -cp JavaSSL.jar SimpleClient
  */
 public class SimpleServer implements Runnable {
 
-  private static SimpleConsts cons = new SimpleConsts();
+  private static SimpleCommon common = new SimpleCommon();
 
   private ServerSocket sktSvr;
   public SimpleServer(ServerSocket ss) {
     sktSvr = ss;
   }
   public static void main(String args[]) {
+    common.setupTrustStore(true);
+    common.showStart("SERVER");
     try {
-      cons.showStart("SERVER");
 
       trace("Getting ServerSocketFactory");
       ServerSocketFactory ssf = SimpleServer.getServerSocketFactory();
@@ -47,11 +48,11 @@ public class SimpleServer implements Runnable {
       ServerSocket ss = ssf.createServerSocket();
       ((SSLServerSocket) ss).setNeedClientAuth(true);
 
-      ss.bind(new InetSocketAddress(cons.host, cons.port));
+      ss.bind(new InetSocketAddress(common.host, common.port));
       trace("Created SSLServerSocket -- Local Socket Address: " + ss.getLocalSocketAddress() + " InetAddress: " + ss.getInetAddress());
       new Thread( new SimpleServer(ss)).start();
     } catch (IOException e) {
-      cons.ln("Unable to start ClassServer: " + e.getMessage());
+      common.err("Unable to start ClassServer: " + e.getMessage());
       e.printStackTrace();
     }
   }
@@ -65,7 +66,7 @@ public class SimpleServer implements Runnable {
       thrdWrite.start();
       Thread thrdRead = new Thread( new SimpleRW("SERVER", true, socket));
       thrdRead.start();
-    } catch(Exception e) { cons.ln("SERVER Exception on Accept -- " + e.toString());}
+    } catch(Exception e) { common.err("SERVER Exception on Accept -- " + e.toString());}
   }
 
   private static ServerSocketFactory getServerSocketFactory() {
@@ -78,11 +79,11 @@ public class SimpleServer implements Runnable {
 
       ctx = SSLContext.getInstance("TLS");
       kmf = KeyManagerFactory.getInstance("SunX509");
-      ks  = KeyStore.getInstance("KeychainStore");
-      ks.load(null, null);
+      ks  = KeyStore.getInstance(common.keystoreName);
+      ks.load(common.keystoreInStrm, common.keystorePwd);
       kmf.init(ks, null);
       ctx.init(kmf.getKeyManagers(), null, null);
-      if(cons.bServer) cons.show("SERVER KeyStore", "Using Mac Keychain", "No password", ks, kmf, ctx);
+      if(common.bServer) common.show("SERVER KeyStore", ks, kmf, ctx);
 
       ssf = ctx.getServerSocketFactory();
       return ssf;
@@ -93,7 +94,7 @@ public class SimpleServer implements Runnable {
     return null;
   }
 
-  public static void trace(String s) { cons.trace(s); }
-  public static void ln(String s)    { cons.ln(s); }
-  public static void blk()           { cons.blk(); }
+  public static void trace(String s) { common.trace(s); }
+  public static void ln(String s)    { common.ln(s); }
+  public static void blk()           { common.blk(); }
 }

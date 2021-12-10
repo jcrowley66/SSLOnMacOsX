@@ -11,7 +11,7 @@ import java.nio.*;
  */
 public class SimpleRW implements Runnable {
 
-  private SimpleConsts cons = new SimpleConsts();
+  private SimpleCommon common = new SimpleCommon();
 
   private String label;
   private boolean read;
@@ -44,7 +44,7 @@ public class SimpleRW implements Runnable {
         doWrite();
       }
     } catch(Exception e){
-      cons.trace(label + (read ? " READ -- " : " WRITE -- ") + "Exception processing In/Out Stream -- " + e.toString());
+      common.err(label + (read ? " READ -- " : " WRITE -- ") + "Exception processing In/Out Stream -- " + e.toString());
     }
     trace(label + " R/W 'run' terminating");
   }
@@ -83,7 +83,7 @@ public class SimpleRW implements Runnable {
       bbBfr.put(strBytes);
       debug("Writing string: " + str);
       outStrm.write(bfr, 0, strBytes.length);
-      cons.trace(label + " WRITE: " + str);
+      common.trace(label + " WRITE: " + str);
       if(str.equals("QUIT")) {
         trace(label + " doWrite terminating");
         Thread.sleep(100);        // To let the outStrm.write complete
@@ -92,7 +92,8 @@ public class SimpleRW implements Runnable {
     }
   }
 
-  private void trace(String s) { cons.trace(s); }
-  private void ln(String s)    {cons.ln(label + " -- " + s); }
-  private void debug(String s) { if(cons.bDebug) cons.ln("DEBUG: " + label + " -- " + s); }
+  private void trace(String s) { common.trace(s); }
+  private void ln(String s)    {
+    common.ln(label + " -- " + s); }
+  private void debug(String s) { if(common.bDebug) common.ln("DEBUG: " + label + " -- " + s); }
 }
