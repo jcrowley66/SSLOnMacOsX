@@ -2,14 +2,20 @@
 import java.security.KeyStore;
 import javax.net.ssl.*;
 
+/** See usage and other comments in SimpleServer */
 public class SimpleClient {
 
   private static SimpleCommon common = new SimpleCommon();
 
   public static void main(String[] args) throws Exception {
     common.setupTrustStore(false);
-    common.showStart("CLIENT");
     try {
+      if(args.length > 0){
+        common.host = args[0];
+        if(args.length > 1)
+          common.port = Integer.parseInt(args[1]);
+      }
+      common.showStart("CLIENT");
       SSLSocket socket   = getSocket(common.host, common.port);
       SSLSession session = socket.getSession();
       trc();

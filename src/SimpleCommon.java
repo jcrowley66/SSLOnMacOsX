@@ -36,12 +36,14 @@ public class SimpleCommon {
   public static char[]      keystorePwd     = null;
   public static InputStream keystoreInStrm  = null;
 
+  /** KEY SETUP - sets up appropriate KeyStore for Mac or Windows
+  */
   public static void setupTrustStore(boolean forServer) {
     if(SystemUtils.IS_OS_MAC){
-      // NOTE: Tried the 'cacerts' on both sides and did NOT work
+      // NOTE: Tried the standard Java 'cacerts' on both sides and did NOT work
       //       Tried 'cacerts' on Server side, KeychainStore on Client side - did NOT work
-      //       KeychainStore on both sides DOES WORK (on my Mac at least)
-//    System.setProperty("javax.net.ssl.trustStore", cacertsPath);
+      //       KeychainStore on both sides DOES WORK
+      //    System.setProperty("javax.net.ssl.trustStore", cacertsPath);
       System.setProperty("javax.net.ssl.trustStoreType", "KeychainStore");
       keystoreName = "KeychainStore";
     } else if(SystemUtils.IS_OS_WINDOWS) {
@@ -61,6 +63,9 @@ public class SimpleCommon {
       trace("     Starting " + label);
       trace("==================================");
       trace("        Host:port: " + host + ":" + port);
+      trace("               OS: " + System.getProperty("os.name"));
+      trace("       OS Version: " + System.getProperty("os.version"));
+      trace("          OS Arch: " + System.getProperty("os.arch"));
       trace("     Java Version: " + System.getProperty("java.version"));
       trace("Java Spec Version: " + System.getProperty("java.specification.version"));
       trace("   Java Class Vsn: " + System.getProperty("java.class.version"));
