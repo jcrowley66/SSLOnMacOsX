@@ -77,18 +77,7 @@ public class SimpleServer implements Runnable {
     SSLServerSocketFactory ssf = null;
     try {
       // set up key manager to do server authentication
-      SSLContext ctx;
-      KeyManagerFactory kmf;
-      KeyStore ks;
-
-      ctx = SSLContext.getInstance("TLS");
-      kmf = KeyManagerFactory.getInstance("SunX509");
-      ks  = KeyStore.getInstance(common.keystoreName);
-      ks.load(common.keystoreInStrm, common.keystorePwd);
-      kmf.init(ks, null);
-      ctx.init(kmf.getKeyManagers(), null, null);
-      if(common.bServer) common.show("SERVER KeyStore", ks, kmf, ctx);
-
+      SSLContext ctx = common.getSSLContext(true);
       ssf = ctx.getServerSocketFactory();
       return ssf;
     } catch (Exception e) {

@@ -32,22 +32,8 @@ public class SimpleClient {
     } catch(Exception e) { common.err("CLIENT Exception -- " + e.toString()); }
   }
   public static SSLSocket getSocket(String ip, int port) throws Exception{
-    SSLContext ctx;
-    KeyManagerFactory kmf;
-    KeyStore ks;
-    SSLSocket socket;
-
-    ctx = SSLContext.getInstance("TLSv1.3");
-    kmf = KeyManagerFactory.getInstance("SunX509");
-    ks  = KeyStore.getInstance(common.keystoreName);
-    ks.load(common.keystoreInStrm, common.keystorePwd);
-
-    kmf.init(ks, null);
-    ctx.init(kmf.getKeyManagers(), null, null);
-
-    if(common.bClient) common.show("SimpleSocket", ks, kmf, ctx);
-
-    socket = (SSLSocket) ctx.getSocketFactory().createSocket(ip, port);
+    SSLContext ctx   = common.getSSLContext(false);
+    SSLSocket socket = (SSLSocket) ctx.getSocketFactory().createSocket(ip, port);
     socket.setEnabledProtocols(new String[]{"TLSv1.3", "TLSv1.2"});
     trace("About to start handshake");
     socket.startHandshake();

@@ -54,7 +54,25 @@ public class SimpleCommon {
       System.setProperty("javax.net.ssl.trustStoreType", "Windows-ROOT");
       keystoreName = "Windows-ROOT";
     } else
-      err("NOT YET IMPLEMENTED for " + SystemUtils.OS_NAME);
+      throw new IllegalStateException("NOT YET IMPLEMENTED for " + SystemUtils.OS_NAME);
+  }
+
+  public static SSLContext getSSLContext(boolean forServer) throws Exception {
+    SSLContext ctx;
+    KeyManagerFactory kmf;
+    KeyStore ks;
+    SSLSocket socket;
+
+    ctx = SSLContext.getInstance("TLSv1.3");
+    kmf = KeyManagerFactory.getInstance("SunX509");
+    ks  = KeyStore.getInstance(keystoreName);
+    ks.load(keystoreInStrm, keystorePwd);
+
+    kmf.init(ks, null);
+    ctx.init(kmf.getKeyManagers(), null, null);
+
+    if(bClient) show(forServer ? "SimpleServer" : "SimpleSocket", ks, kmf, ctx);
+    return ctx;
   }
   // Show environment at startup - Java version, etc
   public static void showStart(String label){
