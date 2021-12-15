@@ -9,11 +9,11 @@ import java.nio.*;
  *
  * If the message entered from console or read from stream is QUIT, then terminate
  */
-public class SimpleRW implements Runnable {
+public class SSL_RW implements Runnable {
 
-  private SimpleCommon common = new SimpleCommon();
+  private AllCommon common = new AllCommon();
 
-  private String label;
+  private String  label;
   private boolean read;
   private Socket  skt;
 
@@ -27,7 +27,7 @@ public class SimpleRW implements Runnable {
   private InputStream   inStrm = null;      // One or the other will be initialized
   private OutputStream  outStrm= null;
 
-  public SimpleRW(String label, boolean read, Socket skt){
+  public SSL_RW(String label, boolean read, Socket skt){
     this.label = label;
     this.read  = read;
     this.skt   = skt;
@@ -44,9 +44,10 @@ public class SimpleRW implements Runnable {
         doWrite();
       }
     } catch(Exception e){
-      common.err(label + (read ? " READ -- " : " WRITE -- ") + "Exception processing In/Out Stream -- " + e.toString());
+      common.err(label, (read ? " READ -- " : " WRITE -- ") + "Exception processing In/Out Stream -- " + e.toString());
     }
     trace(label + " R/W 'run' terminating");
+    System.exit(0);
   }
   // READs a message from the socket & prints to the console
   public void doRead() throws Exception {
@@ -93,7 +94,6 @@ public class SimpleRW implements Runnable {
   }
 
   private void trace(String s) { common.trace(s); }
-  private void ln(String s)    {
-    common.ln(label + " -- " + s); }
+  private void ln(String s)    { common.ln(label + " -- " + s); }
   private void debug(String s) { if(common.bDebug) common.ln("DEBUG: " + label + " -- " + s); }
 }

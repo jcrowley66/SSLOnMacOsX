@@ -22,11 +22,11 @@ The key breakthrough was finding that the JDK includes a Provider which will use
 - javax.net.ssl.trustStoreType="Windows-ROOT"
 - KeyStore.getInstance("Windows-ROOT")
 
-The critical setup is in SimpleCommon.setupTrustStore()
+The critical setup is in AllCommon.setupTrustStore()
 
 See: https://docs.oracle.com/javase/10/security/oracle-providers.htm#JSSEC-GUID-3185649A-C316-45F2-A70E-2B3FF6BDC34F
 
 **Note:** If prompted for your password on a Mac in order to access the Keychain, select the *Always Allow* button.
 
 
-See the comments at the top of SimpleServer for more details and how to execute the server and client..
+See the comments at the top of SSLServer for more details and how to execute the server and client..

@@ -4,10 +4,10 @@ import java.security.KeyStore;
 import java.util.Enumeration;
 import org.apache.commons.lang3.SystemUtils;
 
-public class SimpleCommon {
+public class AllCommon {
   public static boolean traceOn   = true;       // TRUE for the trace(String s) method to display output, FALSE to suppress
 
-  public static boolean bDebug    = false;      // TRUE for the debug(String s) method to display output
+  public static boolean bDebug    = true;      // TRUE for the debug(String s) method to display output
 
   public static boolean bStartDtl = false;
 
@@ -20,13 +20,17 @@ public class SimpleCommon {
   public  static int    port = 51000;               // Port to use
 
   /** Trace of processing controlled by the 'traceOn' switch above */
-  public static void trace(String s)  { if(traceOn) ln(s); }
-  public static void blktrc()         { trace(""); }
+  public static void trace(String s)               { if(traceOn) ln(s); }
+  public static void trace(String label, String s) { trace(label + " -- " + s); }
+  public static void blktrc()                      { trace(""); }
 
-  public static void ln(String s)     { System.out.println(s); }
-  public static void blk()            { ln(""); }
+  public static void ln(String s)               { System.out.println(s); }
+  public static void ln(String label, String s) { ln(label + " -- " + s); }
+  public static void blk()                      { ln(""); }
 
-  public static void err(String s)    { ln("ERROR: " + s); }        // Errors never suppressed
+  public static void err(String label, String s) { ln(label + " -- ERROR: " + s); }        // Errors never suppressed
+
+  public static void debug(String label, String s)  { if(bDebug) ln("DEBUG: " + label + " -- " + s); }
 
   public static String javaHome    = System.getProperty("java.home");
   public static String cacertsPath = javaHome + File.separator + "lib" + File.separator + "security" + File.separator + "cacerts";
@@ -71,7 +75,7 @@ public class SimpleCommon {
     kmf.init(ks, null);
     ctx.init(kmf.getKeyManagers(), null, null);
 
-    if(bClient) show(forServer ? "SimpleServer" : "SimpleSocket", ks, kmf, ctx);
+    if(bClient) show(forServer ? "SSLServer" : "SSLSocket", ks, kmf, ctx);
     return ctx;
   }
   // Show environment at startup - Java version, etc
